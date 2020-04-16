@@ -1,3 +1,17 @@
+
+
+
+db/db_qrys_old.py
+db/db_schema.py
+db/devscript_load_5_last_all_v2.ipynb
+db/devscript_load_universe.ipynb
+db/nohup.out
+db/test_sql_alchely.ipynb
+dev/
+
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
