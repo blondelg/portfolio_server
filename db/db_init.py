@@ -8,9 +8,15 @@ from sqlalchemy.orm import sessionmaker
 if __name__ == '__main__':
 
     # Import db settings
+    config = configparser.ConfigParser()
+    config.read('../config/config.ini')
+    user = config['database']['user']
+    server = config['database']['server']
+    port = config['database']['port']
+    database = config['database']['database']
 
     # Create db if not exists
-    engine = db.create_engine('mysql+pymysql://root@localhost/dev', echo = True)
+    engine = db.create_engine(f'mysql+pymysql://{user}@{server}:{port}/{database}', echo = True)
     if not database_exists(engine.url):
         create_database(engine.url)
 
@@ -43,7 +49,6 @@ if __name__ == '__main__':
             self.port_nom = port_nom
             self.port_date_d = port_date_d
             self.port_date_f = port_date_f
-
 
     class ref(Base):
         __tablename__ = 'ref'
