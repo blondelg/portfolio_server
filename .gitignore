@@ -8,7 +8,7 @@ db/devscript_load_universe.ipynb
 db/nohup.out
 db/test_sql_alchely.ipynb
 dev/
-
+*.ipynb
 
 
 

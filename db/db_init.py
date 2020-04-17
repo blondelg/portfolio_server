@@ -12,12 +12,13 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('../config/config.ini')
     user = config['database']['user']
+    password = config['database']['password']
     server = config['database']['server']
     port = config['database']['port']
     database = config['database']['database']
 
     # Create db if not exists
-    engine = db.create_engine(f'mysql+pymysql://{user}@{server}:{port}/{database}', echo = True)
+    engine = db.create_engine(f'mysql+pymysql://{user}:{password}@{server}:{port}/{database}', echo = True)
     if not database_exists(engine.url):
         create_database(engine.url)
     Session = sessionmaker(bind=engine)
