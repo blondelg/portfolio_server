@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from db_schema import *
+from db.model import *
+from config.fcts import *
 
 """ Module which holds all SQL queries used for the process """
 
@@ -13,10 +14,11 @@ def sql_get_universe(ref_id_list=[]):
     ref_url = []
     ref_url2 = []
 
+    db = database()
+
+    # loop on all active assets
     if len(ref_id_list) == 0:
-        qry = "SELECT ref_id, ref_url FROM ref where ref_end_d IS NULL"
-        database_connection = db(qry)
-        output_cursor = database_connection.return_cursor()
+        output_cursor = db.session.query(ref).with_entities(ref.id, ref.ref_url).filter_by(ref_end_d = None)
 
         for line in output_cursor:
             ref_id.append(line[0])
@@ -31,10 +33,9 @@ def sql_get_universe(ref_id_list=[]):
         # loop to get urls
         for elt in ref_id_list:
             ref_id = str(elt)
-            temp_qry = f'SELECT ref_url FROM ref WHERE ref_id = {ref_id} AND ref_end_d IS NULL'
-            database_connection = db(temp_qry)
-            output_cursor = database_connection.return_cursor()
-            temp_ref_url = output_cursor.fetchone()[0]
+
+            output_cursor = db.session.query(ref).with_entities(ref.ref_url).filter_by(id = ref_id)
+            temp_ref_url = output_cursor.one()[0]
             ref_url.append('https://www.boursorama.com' + temp_ref_url)
 
             temp_ref_url = temp_ref_url.replace('/bourse/indices/cours/','')
@@ -52,20 +53,26 @@ def sql_insert_data(ref_id, date, fermeture, ouverture, haut, bas, vol):
     """
     insert into data table info from internet
     """
-    date_correct = '\'' + date + '\''
-    qry = (
-        f"INSERT INTO data (data_ref_id, data_ouverture, data_fermeture, data_haut, data_bas, data_volume, data_date)"
-        f"SELECT {ref_id},{ouverture},{fermeture},{haut},{bas},{vol},ADDDATE({date_correct},0)"
-        f"WHERE ("
-        f"  SELECT data_id FROM data"
-        f"  WHERE 1=1"
-        f"  AND data_date = ADDDATE({date_correct},0)"
-        f"  AND data_ref_id = {ref_id}"
-        f") IS NULL;"
-    )
-    database_connection = db(qry)
+    db = database()
 
-def sql_date_add_price():
+    try:
+        db.session.query(data).with_entities(data.id).filter_by(data_ref_id = ref_id, data_date = date).one()
+
+    except:
+        temp_data = data(data_ref_id = ref_id, \
+        data_ouverture = ouverture,\
+        data_fermeture = fermeture,\
+        data_haut = haut,\
+        data_bas = bas,\
+        data_volume = vol,\
+        data_date = date)
+
+        db.session.add(temp_data)
+        db.session.commit()
+        db.session.close()
+
+
+def sql_date_add_price(): # A supprimer
     """
     add lines in price table with date present
     in data table
@@ -73,16 +80,25 @@ def sql_date_add_price():
 
     date_to_add = []
     nb_date = 0
+    db = database()
 
+    # load dates from price table
     price_date = dict()
-    database_connection = db('SELECT DISTINCT price_date FROM price')
-    output_cursor = database_connection.return_cursor()
+    output_cursor = db.session.query(price).with_entities(price.price_date).distinct(price.price_date)
+
+    # database_connection = db('SELECT DISTINCT price_date FROM price')
+    # output_cursor = database_connection.return_cursor()
+
     for elt in output_cursor:
         price_date[elt[0]] = 1
 
+    # load dates from data table
     data_date = dict()
-    database_connection = db('SELECT DISTINCT data_date FROM data')
-    output_cursor = database_connection.return_cursor()
+    output_cursor = db.session.query(data).with_entities(data.data_date).distinct(data.data_date)
+
+    # database_connection = db('SELECT DISTINCT data_date FROM data')
+    # output_cursor = database_connection.return_cursor()
+
     for elt in output_cursor:
         data_date[elt[0]] = 1
 
@@ -91,9 +107,14 @@ def sql_date_add_price():
             date_to_add.append(key)
 
     for date in date_to_add:
-        temp_date = '\'' + date.strftime('%Y-%m-%d') + '\''
-        qry = f'INSERT INTO price (price_date) VALUES ({temp_date})'
-        database_connection = db(qry)
+        # temp_date = '\'' + date.strftime('%Y-%m-%d') + '\''
+        # qry = f'INSERT INTO price (price_date) VALUES ({temp_date})'
+        # database_connection = db(qry)
+        temp_data = price(price_date = date.isoformat())
+        db.session.add(temp_data)
+        db.session.commit()
+        db.session.close()
+
         nb_date += 1
 
     return nb_date

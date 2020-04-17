@@ -66,6 +66,7 @@ class log_class():
     def flush(self):
         """ delete log files older than N days """
 
+        # loop on log files
         for log_path in glob.glob(self.log_path + "*.log"):
             str_log_date = os.path.basename(log_path).replace(".log","")
             log_date = date.fromisoformat(str_log_date)
@@ -89,6 +90,8 @@ class database():
         self.database = config('database','database')
         self.engine = db.create_engine(f'mysql+pymysql://{self.user}:{self.password}@{self.server}:{self.port}/{self.database}', echo = True)
         self.log = log_class()
+        self.session = ''
+        self.activate_session()
 
     def create(self):
         """ create database following defined model """
@@ -96,20 +99,20 @@ class database():
         try:
             if not database_exists(self.engine.url):
                 create_database(self.engine.url)
-            Session = sessionmaker(bind=engine)
-            Base.metadata.create_all(engine)
+            Base.metadata.create_all(self.engine)
             self.log.info("database schema implemented")
 
         except Exception as e:
             self.log.error("database schema faild")
             self.log.error(e)
 
-    def session(self):
+    def activate_session(self):
         """ create a session for query """
 
         try:
             Session = sessionmaker(bind=self.engine)
-            return Session()
+            self.session = Session()
+            self.log.info("database connected")
 
         except Exception as e:
             self.log.error("database connection faild")
