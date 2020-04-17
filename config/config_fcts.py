@@ -1,4 +1,8 @@
 import configparser
+import sqlalchemy as db
+from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.orm import sessionmaker
+from db.db_schema import *
 import logging
 from datetime import date, timedelta
 import os
@@ -9,9 +13,12 @@ def config(config_cat, config_name):
     """ Return a config value from the configfile"""
 
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    
+    config.read('config/config.ini')
+
     return config[config_cat][config_name]
+
+### SET Home directory
+os.chdir(config('home', 'home'))
 
 class log_class():
     """ Logging class """
@@ -67,3 +74,43 @@ class log_class():
             if log_date < delete_date:
                 os.remove(log_path)
                 self.logger.info(f"log {str_log_date}.log has been removed")
+
+
+class database():
+    """ easy manage flows with database """
+
+    def __init__(self):
+
+        # Load config settings
+        self.user = config('database','user')
+        self.password = config('database','password')
+        self.server = config('database','server')
+        self.port = config('database','port')
+        self.database = config('database','database')
+        self.engine = db.create_engine(f'mysql+pymysql://{self.user}:{self.password}@{self.server}:{self.port}/{self.database}', echo = True)
+        self.log = log_class()
+
+    def create(self):
+        """ create database following defined model """
+
+        try:
+            if not database_exists(self.engine.url):
+                create_database(self.engine.url)
+            Session = sessionmaker(bind=engine)
+            Base.metadata.create_all(engine)
+            self.log.info("database schema implemented")
+
+        except Exception as e:
+            self.log.error("database schema faild")
+            self.log.error(e)
+
+    def session(self):
+        """ create a session for query """
+
+        try:
+            Session = sessionmaker(bind=self.engine)
+            return Session()
+
+        except Exception as e:
+            self.log.error("database connection faild")
+            self.log.error(e)

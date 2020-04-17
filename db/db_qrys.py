@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from fcts import *
+from db_schema import *
 
 """ Module which holds all SQL queries used for the process """
 
