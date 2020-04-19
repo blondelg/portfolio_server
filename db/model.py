@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from sqlalchemy import Table, Column, Integer, String, Date, Float,ForeignKey, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -79,7 +80,8 @@ class price(Base):
     price_price = Column('price_price', Float(3), nullable=True, default=0.0)
 
     def __repr__(self):
-        return f"<price(price_date='{self.price_date}', \
+        return f"<price(price_ref_id='{self.price_ref_id}', \
+        price(price_date='{self.price_date}', \
         price_price='{self.price_price}')>"
 
 class transaction(Base):

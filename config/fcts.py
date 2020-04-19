@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 import configparser
 import sqlalchemy as db
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.orm import sessionmaker
-from db.db_schema import *
+from db.model import *
 import logging
 from datetime import date, timedelta
 import os
 import glob
+import pandas as pd
 
 
 def config(config_cat, config_name):
@@ -117,3 +119,6 @@ class database():
         except Exception as e:
             self.log.error("database connection faild")
             self.log.error(e)
+
+def queryset_to_dataframe(queryset):
+    """ from a queryset return a dataframe """
