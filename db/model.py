@@ -36,8 +36,9 @@ class ref(Base):
     __table_args__ = {'comment': 'asset scope'}
     id = Column('id', Integer, primary_key = True)
     ref_nom = Column('ref_nom', String(100),nullable=False)
-    ref_isin = Column('ref_isin', String(14),nullable=False)
+    ref_isin = Column('ref_isin', String(14),nullable=True)
     ref_url = Column('ref_url', String(40),nullable=False)
+    ref_id_yahoo = Column('ref_id_yahoo', String(40),nullable=True)
     ref_sector_id = Column('ref_sector_id', Integer, ForeignKey("sector.id"), default=1)
     ref_start_d = Column('ref_start_d', Date)
     ref_end_d = Column('ref_end_d', Date)
@@ -46,6 +47,7 @@ class ref(Base):
         return f"<ref(ref_nom='{self.ref_nom}', \
         ref_isin='{self.ref_isin}', \
         ref_url='{self.ref_url}', \
+        ref_id_yahoo='{self.ref_id_yahoo}', \
         ref_sector_id='{self.ref_sector_id}', \
         ref_start_d='{self.ref_start_d}', \
         ref_end_d='{self.ref_end_d}')>"

@@ -5,6 +5,10 @@ from mining.parser import *
 
 """ Module which holds all SQL queries used for the process """
 
+def orm_query_to_dataframe(qry):
+    """ from an SQLAlchemy query return a dataframe """
+    return pd.read_sql(qry.statement, qry.session.bind, index_col='id')
+
 class mref():
 
     """ manage ref methods """
@@ -14,6 +18,7 @@ class mref():
         self.scope = ref_scope
         self.id = []
         self.url = []
+        self.target = "https://www.boursorama.com"
         self.session = database().session
         self.dico = {}
         self.get_active()
@@ -47,23 +52,30 @@ class mref():
         self.session.commit()
 
 
+    def get_from_id(self, id):
+
+        """ retrun record from a given id """
+
+        return orm_query_to_dataframe(self.session.query(ref).filter_by(id = id))
+
     def update(self,):
-
-        """ update existing record """
-
-        pass
-
-    def update_or_insert(self,):
 
         """ update if exists, else insert """
 
         pass
 
-    def disable(self,):
+    def update_isin(self):
 
-        """ disable records from a given ref or ref list """
+        """ update ISIN """
 
-        pass
+        for id, url in self.dico.items():
+            t_isin = html_parser_metadata(self.target + url).isin
+            if t_isin:
+                self.session.query(ref).filter_by(id = id).update({'ref_isin': t_isin})
+                self.session.commit()
+
+
+
 
 
 class mdata():
@@ -104,12 +116,12 @@ class mdata():
         """ load last days for active scope """
 
         for id, url in mref().dico.items():
-            for row in html_parser_data_last("https://www.boursorama.com" + url).return_df().iterrows():
+            for row in html_parser_data_last(self.target + url).return_df().iterrows():
 
                 if self.record_exists(id, row[1]["date"]) is False:
                     self.insert(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], row[1]["vol"])
 
-    def load_histo(self):
+    def load_histo(self, start_d, end_d):
 
         """ load historical data for active scope """
         pass
@@ -143,8 +155,8 @@ class mprice():
         """ update all price from data if record is not existing """
 
         # load data into a dataframe
-        output_cursor = self.session.query(data)
-        df_data = pd.read_sql(output_cursor.statement, output_cursor.session.bind, index_col='id')
+        qry = self.session.query(data)
+        df_data = orm_query_to_dataframe(qry)
 
         # build key from ref_id and date
         df_data["key"] = df_data["data_ref_id"].astype(str) + "#" + df_data["data_date"].astype(str)
@@ -153,7 +165,6 @@ class mprice():
         price_scope["price"] = price_scope["price"].round(2)
 
         for row in price_scope.iterrows():
-            #print(row[1].data_ref_id, row[1].data_date, row[1].price)
             self.insert(row[1].data_ref_id, row[1].data_date, row[1].price)
 
     def price_to_df(self):
