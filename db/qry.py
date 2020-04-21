@@ -10,6 +10,7 @@ class mref():
     """ manage ref methods """
 
     def __init__(self, ref_scope=None):
+        self.log = log_class()
         self.scope = ref_scope
         self.id = []
         self.url = []
@@ -70,6 +71,7 @@ class mdata():
     """ manage data methods """
 
     def __init__(self):
+        self.log = log_class()
         self.session = database().session
 
     def insert(self, ref_id, date, fermeture, ouverture, haut, bas, vol):
@@ -87,6 +89,7 @@ class mdata():
         self.session.add(temp_data)
         self.session.commit()
 
+
     def record_exists(self, ref_id, date):
 
         """ returne True if there is a record for a ref, a a date """
@@ -96,15 +99,20 @@ class mdata():
         else:
             return True
 
-    def load_5_last(self):
+    def load_last(self):
 
-        """ load last five days for active scope """
+        """ load last days for active scope """
 
         for id, url in mref().dico.items():
-            for row in html_parser_data_5d("https://www.boursorama.com" + url).return_df().iterrows():
-                print("DEBBUUUG", self.record_exists(id, row[1]["date"]))
+            for row in html_parser_data_last("https://www.boursorama.com" + url).return_df().iterrows():
+
                 if self.record_exists(id, row[1]["date"]) is False:
                     self.insert(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], row[1]["vol"])
+
+    def load_histo(self):
+
+        """ load historical data for active scope """
+        pass
 
 
 
