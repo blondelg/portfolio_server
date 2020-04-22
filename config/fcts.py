@@ -108,6 +108,11 @@ class database():
             self.log.error("database schema faild")
             self.log.error(e)
 
+    def drop(self):
+
+        """ drop database """
+        os.system("mysql --user=root --password=root -e \"drop database dev\"")
+
     def activate_session(self):
         """ create a session for query """
 

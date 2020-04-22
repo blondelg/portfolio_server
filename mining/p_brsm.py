@@ -14,7 +14,7 @@ class html_parser_metadata(HTMLParser, object):
         self.flag_isin = False
         self.isin = ''
         self.htlm = ''
-        self.target = "https://www.boursorama.com"
+        self.target = "https://www.boursorama.com/cours/"
         self.load_htlm(self.target + url)
         self.feed(self.html)
 

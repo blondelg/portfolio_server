@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from db.model import *
 from config.fcts import *
-from mining.parser import *
+from mining.p_yh import *
+from mining.p_brsm import *
 
 """ Module which holds all SQL queries used for the process """
 
@@ -18,27 +19,33 @@ class mref():
         self.scope = ref_scope
         self.id = []
         self.url = []
-        self.target = "https://www.boursorama.com"
+        self.target = "https://www.boursorama.com/cours/{url}"
         self.session = database().session
-        self.dico = {}
-        self.get_active()
+        self.dico = {} # key = ref id, value = ref_url
 
-    def get_active(self):
+    def get_url(self, source_id):
 
-        """ get active id, url """
+        """ build the dict[ref_id] = url depending on the selected data source """
 
         # id scope not defined during init
         if self.scope is None:
-            for line in self.session.query(ref).with_entities(ref.id, ref.ref_url).filter_by(ref_end_d = None):
-                self.id.append(line[0])
-                self.url.append(line[1])
-                self.dico[line[0]] = line[1]
+            qry = self.session.query(ref,source).with_entities(ref.id, source.sou_url) \
+            .filter(ref.id == source.sou_ref_id) \
+            .filter(source.sou_source_ref_id == 1) \
+            .filter_by(ref_end_d = None)
+
+            df = orm_query_to_dataframe(qry)
+            self.dico = df[df.columns[0]].to_dict()
 
         else:
-            for line in self.session.query(ref).with_entities(ref.id, ref.ref_url).filter_by(ref_end_d = None).filter(ref.id.in_(self.scope)):
-                self.id.append(line[0])
-                self.url.append(line[1])
-                self.dico[line[0]] = line[1]
+            qry = self.session.query(ref,source).with_entities(ref.id, source.sou_url) \
+            .filter(ref.id == source.sou_ref_id) \
+            .filter(source.sou_source_ref_id == 1) \
+            .filter(ref.id.in_(self.scope)) \
+            .filter_by(ref_end_d = None)
+
+            df = orm_query_to_dataframe(qry)
+            self.dico = df[df.columns[0]].to_dict()
 
     def insert(self, ref_nom, ref_isin, ref_url, ref_sector_id=None):
 
@@ -69,7 +76,7 @@ class mref():
         """ update ISIN """
 
         for id, url in self.dico.items():
-            t_isin = html_parser_metadata(self.target + url).isin
+            t_isin = html_parser_metadata(url).isin
             if t_isin:
                 self.session.query(ref).filter_by(id = id).update({'ref_isin': t_isin})
                 self.session.commit()

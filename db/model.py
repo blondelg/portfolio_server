@@ -37,8 +37,8 @@ class ref(Base):
     id = Column('id', Integer, primary_key = True)
     ref_nom = Column('ref_nom', String(100),nullable=False)
     ref_isin = Column('ref_isin', String(14),nullable=True)
-    ref_url = Column('ref_url', String(40),nullable=False)
-    ref_id_yahoo = Column('ref_id_yahoo', String(40),nullable=True)
+    # ref_url = Column('ref_url', String(40),nullable=False)
+    # ref_id_yahoo = Column('ref_id_yahoo', String(40),nullable=True)
     ref_sector_id = Column('ref_sector_id', Integer, ForeignKey("sector.id"), default=1)
     ref_start_d = Column('ref_start_d', Date)
     ref_end_d = Column('ref_end_d', Date)
@@ -51,6 +51,27 @@ class ref(Base):
         ref_sector_id='{self.ref_sector_id}', \
         ref_start_d='{self.ref_start_d}', \
         ref_end_d='{self.ref_end_d}')>"
+
+class source(Base):
+    __tablename__ = 'source'
+    __table_args__ = {'comment': 'list of url in data sources'}
+    id = Column('id', Integer, primary_key = True)
+    sou_ref_id = Column('sou_ref_id', Integer, ForeignKey("ref.id"),nullable=False)
+    sou_source_ref_id = Column('sou_source_ref_id', Integer, ForeignKey("source_ref.id"),nullable=False)
+    sou_url = Column('sou_url', String(40),nullable=False)
+
+    def __repr__(self):
+        return f"<ref(sou_ref_id='{self.sou_ref_id}', \
+        sou_url='{self.sou_url}')>"
+
+class source_ref(Base):
+    __tablename__ = 'source_ref'
+    __table_args__ = {'comment': 'list reference of each source'}
+    id = Column('id', Integer, primary_key = True)
+    rsou_nom = Column('rsou_nom', String(40),nullable=False)
+
+    def __repr__(self):
+        return f"<source_ref(rsou_nom='{self.rsou_nom}')>"
 
 class data(Base):
     __tablename__ = 'data'
