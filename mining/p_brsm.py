@@ -3,6 +3,7 @@ import urllib
 from urllib import request
 from html.parser import HTMLParser
 from db.qry import *
+from datetime import datetime
 
 class html_parser_metadata(HTMLParser, object):
 
@@ -52,8 +53,8 @@ class html_parser_data_last(HTMLParser, object):
         self.flag_isin = False
         self.raw_list = ['date']
         self.htlm = ''
-        self.target = "https://www.boursorama.com"
-        self.load_htlm(self.target + url)
+        self.target = "https://www.boursorama.com/cours/{url}"
+        self.load_htlm(url)
         self.feed(self.html)
 
 
@@ -134,8 +135,7 @@ class html_parser_data_last(HTMLParser, object):
     def load_htlm(self,url):
 
         """ load raw HTML """
-
-        with urllib.request.urlopen(url) as response:
+        with urllib.request.urlopen(self.target.format(url=url)) as response:
             self.html = response.read().decode("utf-8")
 
     def nb_date(self):
@@ -163,7 +163,6 @@ class html_parser_data_1Y(HTMLParser, object):
         self.load_htlm()
         self.feed(self.html)
         self.get_data()
-
 
     def handle_starttag(self, tag, attrs):
         # detect pagination data
@@ -209,3 +208,31 @@ class html_parser_data_1Y(HTMLParser, object):
         for i in range(1, self.nb_page + 1):
             self.load_htlm(self.target.format(page = str(i), ref_url = self.url, start_d = self.start_d))
             self.feed(self.html)
+
+    def return_df(self):
+
+        """ return a dataframe with the 5 last days """
+
+        head = ['date', 'close', 'var', 'max', 'min', 'open']
+        df_list = []
+        temp = []
+        count = 0
+        for e in self.raw_list:
+            temp.append(e)
+            if count < 5:
+                count += 1
+            else:
+                df_list.append(temp)
+                temp = []
+                count = 0
+
+        df = pd.DataFrame(df_list)
+        df.columns = head
+        df["date"] = df["date"].apply(lambda x: datetime.strptime(x, "%d/%m/%Y").strftime("%Y-%m-%d"))
+        df = df.drop('var', axis=1)
+        df["close"] = df["close"].astype("float")
+        df["open"] = df["open"].astype("float")
+        df["max"] = df["max"].astype("float")
+        df["min"] = df["min"].astype("float")
+
+        return df

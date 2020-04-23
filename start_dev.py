@@ -138,11 +138,15 @@ class html_parser_yahoo(HTMLParser, object):
 
 #
 db=database()
-for line in db.session.query(ref).with_entities(ref.id, ref.ref_isin):
-    print(line)
-    temp_data = source(sou_ref_id = line[0], \
-    sou_source_ref_id = 2,\
-    sou_url = html_parser_yahoo(line[1]).url)
+# for line in db.session.query(ref).with_entities(ref.id, ref.ref_isin):
+#     print(line)
+#     temp_data = source(sou_ref_id = line[0], \
+#     sou_source_ref_id = 2,\
+#     sou_url = html_parser_yahoo(line[1]).url)
+#
+#     db.session.add(temp_data)
+#     db.session.commit()
 
-    db.session.add(temp_data)
-    db.session.commit()
+
+# Load last data
+mdata().load_last()

@@ -83,8 +83,6 @@ class mref():
 
 
 
-
-
 class mdata():
 
     """ manage data methods """
@@ -92,6 +90,7 @@ class mdata():
     def __init__(self):
         self.log = log_class()
         self.session = database().session
+
 
     def insert(self, ref_id, date, fermeture, ouverture, haut, bas, vol):
 
@@ -108,6 +107,24 @@ class mdata():
         self.session.add(temp_data)
         self.session.commit()
 
+    def update(self, ref_id, date, fermeture, ouverture, haut, bas, vol):
+
+        """ update an existing record """
+
+        self.session.query(data) \
+        .filter(data.data_ref_id == ref_id) \
+        .filter(data.data_date == date) \
+        .update({
+        "data_ref_id": ref_id,
+        "data_ouverture": ouverture,
+        "data_fermeture": fermeture,
+        "data_haut": haut,
+        "data_bas": bas,
+        "data_volume": vol,
+        "data_date": date
+        })
+        self.session.commit()
+
 
     def record_exists(self, ref_id, date):
 
@@ -118,20 +135,31 @@ class mdata():
         else:
             return True
 
-    def load_last(self):
+    def load_last(self, update=True):
 
         """ load last days for active scope """
-
-        for id, url in mref().dico.items():
-            for row in html_parser_data_last(self.target + url).return_df().iterrows():
+        scope = mref()
+        scope.get_url(1)
+        for id, url in scope.dico.items():
+            for row in html_parser_data_last(url).return_df().iterrows():
 
                 if self.record_exists(id, row[1]["date"]) is False:
                     self.insert(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], row[1]["vol"])
+                elif update:
+                    self.update(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], row[1]["vol"])
 
-    def load_histo(self, start_d, end_d):
+    def load_histo(self, start_d, update=True):
 
         """ load historical data for active scope """
-        pass
+        scope = mref()
+        scope.get_url(1)
+        for id, url in scope.dico.items():
+            for row in html_parser_data_1Y(url, start_d).return_df().iterrows():
+
+                if self.record_exists(id, row[1]["date"]) is False:
+                    self.insert(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], 0)
+                elif update:
+                    self.update(id, row[1]["date"], row[1]["close"], row[1]["open"], row[1]["max"], row[1]["min"], 0)
 
 
 
